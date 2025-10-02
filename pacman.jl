@@ -61,7 +61,8 @@ function agent_step!(agent, model)
 end
 
 function initialize_model()
-    space = GridSpace((17,14); periodic = false, metric = :manhattan)
+    filas, columnas = size(matrix)
+    space = GridSpace((filas, columnas); periodic = false, metric = :manhattan)
     model = StandardABM(Ghost, space; agent_step!)
     return model
 end
