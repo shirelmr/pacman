@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react'
 
 const App = () => {
-  const [posX, setPosX] = useState(6);
-  const [posY, setPosY] = useState(8);
+  const [posX, setPosX] = useState(2);
+  const [posY, setPosY] = useState(2);
 
   useEffect(() => {
     const interval = setInterval(() => {
       fetch("http://localhost:8000/run")
       .then(res => res.json())
       .then(res => {
-        setPosY(res.agents[0].pos[0]-1);
-        setPosX(res.agents[0].pos[1]-1);
+        setPosX(res.agents[0].pos[0]-1);
+        setPosY(res.agents[0].pos[1]-1);
       });
-    }, 500);
+    }, 1000);
 
       return () => clearInterval(interval);
   }, [posX, posY]);
