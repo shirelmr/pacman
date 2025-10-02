@@ -1,4 +1,4 @@
-using Agents
+using Agents,Agents.Pathfinding
 
 const matrix = [
     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
@@ -19,6 +19,7 @@ const matrix = [
 
 @agent struct Ghost(GridAgent{2})
     type::String = "Ghost"
+    route::Vector{Tuple{Int,Int}} = Tuple{Int,Int}[]
 end
 
 function is_valid_position(pos, model)
@@ -48,24 +49,41 @@ function walk!(agent, model)
         end
     end
     
-    println(possible_moves)
     if !isempty(valid_positions)
         new_pos = rand(valid_positions)
         move_agent!(agent, new_pos, model)
     end
-    println(agent.pos)
 end
 
-function agent_step!(agent, model)
-    walk!(agent, model)
+function my_agent_step!(agent, model)
+    if isnothing(agent.route) || isempty(agent.route)
+        target = (2, 13)
+        ruta_lista = plan_route!(agent, target, model.pathfinder)
+        if !isnothing(ruta_lista)
+            agent.route = collect(ruta_lista)
+            println("Ruta creada con ", length(agent.route), " pasos")
+        else
+            println("No se pudo crear una ruta a $target")
+            return
+        end
+    end
+    
+    old_pos = agent.pos
+    move_along_route!(agent, model, model.pathfinder)
+    println("Movido de $old_pos a $(agent.pos)")
 end
 
 function initialize_model()
-    filas, columnas = size(matrix)
-    space = GridSpace((filas, columnas); periodic = false, metric = :manhattan)
-    model = StandardABM(Ghost, space; agent_step!)
-    return model
+    walkmap = BitArray(matrix .== 1)
+    space = GridSpace(size(walkmap); periodic = false)
+    pathfinder = AStar(space; walkmap=walkmap, diagonal_movement=false)
+    properties = Dict(:pathfinder => pathfinder)
+    model = StandardABM(Ghost, space;
+                        properties = properties,
+                        agent_step! = my_agent_step!)
+    add_agent!((2, 2), model)
+
+    return model, pathfinder
 end
 
-model = initialize_model()
-a = add_agent!(Ghost, pos=(2, 2), model)
+model, pathfinder = initialize_model()
